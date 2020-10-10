@@ -140,6 +140,9 @@ were not used as they were not relevant for the project.
 | fBodyBodyGyroMagSdev     | numeric | \-0.981468841692308 / 0.236659662496296                                    | \-0.6723223 |
 | fBodyBodyGyroJerkMagSdev | numeric | \-0.99758523057971 / 0.287834616098305                                     | \-0.7715171 |
 
+Variable names starting with ‘t’ denote time calculations, ‘f’ denote
+frequency.
+
 1.  Jorge L. Reyes-Ortiz, Alessandro Ghio, Luca Oneto, Davide Anguita.
     November 2012.
 
