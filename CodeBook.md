@@ -69,6 +69,29 @@ descriptions are equivalent.
 Inertial signal data files are also included in the dataset however they
 were not used as they were not relevant for the project.
 
+Script, used to generate data summary table :
+
+``` r
+library(tidyverse)
+td <- read.csv("~/Desktop/R/projects/dscoursera/Rprogramming/assignment4/tidy_data.txt", 
+    sep = "", stringsAsFactors = TRUE)
+factors <- unlist(td %>% distinct(activity), use.names = F) %>% paste(sep = "", collapse = ", ")
+classes <- td %>% summarise(across(.cols = everything(), class))
+classes <- rownames_to_column(as.data.frame(t(classes)))
+ranges <- td %>% summarise(across(!where(is.factor), range))
+ranges <- rownames_to_column(as.data.frame(t(ranges)))
+means <- td %>% summarise(across(!where(is.factor) & !where(is.integer), mean))
+means <- rownames_to_column(as.data.frame(t(means)))
+
+
+finale <- left_join(classes, ranges, by = "rowname") %>% left_join(means, by = "rowname") %>% 
+    unite("Min. / Max.", V1.y:V2, sep = " / ")
+colnames(finale) <- c("Variable", "Class", "Range", "Mean")
+finale$Range[1] <- factors
+knitr::kable(finale, caption = "Variable names starting with
+             't' denote time calculations, 'f' denote frequency.")
+```
+
 | Variable                 | Class   | Range                                                                      |        Mean |
 | :----------------------- | :------ | :------------------------------------------------------------------------- | ----------: |
 | activity                 | factor  | LAYING, SITTING, STANDING, WALKING, WALKING\_DOWNSTAIRS, WALKING\_UPSTAIRS |          NA |
