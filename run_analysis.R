@@ -79,8 +79,7 @@ analyse <- function(){
     # Group and create the final tidy data
     observations %>% group_by(activity,subjectId)%>% 
         summarise(across(everything(),mean))%>%
-        write.csv("tidy_data.csv",row.names = F)
-    
+        write.table("tidy_data.txt",row.names = F)
     
 }
 

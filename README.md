@@ -137,4 +137,4 @@ Group, summarise and write the final tidy data:
 
     tidy_data <<- observations %>% group_by(activity,subjectId)%>% 
         summarise(across(everything(),mean))%>%
-        write.csv("tidy_data.csv")
+        write.table("tidy_data.txt",row.names = F)
