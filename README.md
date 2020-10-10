@@ -3,114 +3,138 @@ Getting And Cleaning Data Course Project
 Mehmet Bora
 08/10/2020
 
-`{r setup, include=FALSE} knitr::opts_chunk$set(echo = TRUE)`
+### Requirements
 
-This is the original README text describing the data and the experiment
+The requirements for the script run\_analysis.R are as follows :
 
-\==================================================================
-Human Activity Recognition Using Smartphones Dataset Version 1.0
-================================================================== Jorge
-L. Reyes-Ortiz, Davide Anguita, Alessandro Ghio, Luca Oneto. Smartlab -
-Non Linear Complex Systems Laboratory DITEN - Universit? degli Studi di
-Genova. Via Opera Pia 11A, I-16145, Genoa, Italy.
-<activityrecognition@smartlab.ws> www.smartlab.ws
-==================================================================
+1.  [Merges the training and the test sets to create one data
+    set.](#first)
+2.  [Extracts only the measurements on the mean and standard deviation
+    for each measurement.](#second)
+3.  [Uses descriptive activity names to name the activities in the data
+    set.](#third)
+4.  [Appropriately labels the data set with descriptive variable
+    names.](#fourth)
+5.  [From the data set in step 4, creates a second, independent tidy
+    data set with the average of each variable for each activity and
+    each subject.](#fifth)
 
-The experiments have been carried out with a group of 30 volunteers
-within an age bracket of 19-48 years. Each person performed six
-activities (WALKING, WALKING\_UPSTAIRS, WALKING\_DOWNSTAIRS, SITTING,
-STANDING, LAYING) wearing a smartphone (Samsung Galaxy S II) on the
-waist. Using its embedded accelerometer and gyroscope, we captured
-3-axial linear acceleration and 3-axial angular velocity at a constant
-rate of 50Hz. The experiments have been video-recorded to label the data
-manually. The obtained dataset has been randomly partitioned into two
-sets, where 70% of the volunteers was selected for generating the
-training data and 30% the test data.
+### Script
 
-The sensor signals (accelerometer and gyroscope) were pre-processed by
-applying noise filters and then sampled in fixed-width sliding windows
-of 2.56 sec and 50% overlap (128 readings/window). The sensor
-acceleration signal, which has gravitational and body motion components,
-was separated using a Butterworth low-pass filter into body acceleration
-and gravity. The gravitational force is assumed to have only low
-frequency components, therefore a filter with 0.3 Hz cutoff frequency
-was used. From each window, a vector of features was obtained by
-calculating variables from the time and frequency domain. See
-‘features\_info.txt’ for more details.
+The script initially checks if the session has the required libraries
+loaded.
 
-# For each record it is provided:
+    require(data.table)  
+    require(dplyr)
 
-  - Triaxial acceleration from the accelerometer (total acceleration)
-    and the estimated body acceleration.
-  - Triaxial Angular velocity from the gyroscope.
-  - A 561-feature vector with time and frequency domain variables.
-  - Its activity label.
-  - An identifier of the subject who carried out the experiment.
+To check if the dataset is available for the script in its entirety, all
+dataset files are declared and vectorized. Also the folder for the
+dataset is declared.
 
-# The dataset includes the following files:
+    datafolder <- "UCI HAR Dataset"
+    filetestX <- file.path(datafolder,"test","X_test.txt") 
+    filetestY <- file.path(datafolder,"test","y_test.txt")
+    filetrainX <- file.path(datafolder,"train","X_train.txt")
+    filetrainY <- file.path(datafolder,"train","y_train.txt")
+    filetestSub <- file.path(datafolder,"test","subject_test.txt")
+    filetrainSub <- file.path(datafolder,"train","subject_train.txt")
+    filefeatures <- file.path(datafolder,"features.txt")
+    fileactivities <- file.path(datafolder,"activity_labels.txt")
+    
+    requiredFiles <- c(filetestX,
+                       filetestY,
+                       filetrainX,
+                       filetrainY,
+                       filetestSub,
+                       filetrainSub,
+                       filefeatures,
+                       fileactivities)`
 
-  - ‘README.txt’
+All files and availability of the dataset folder is checked. If any
+discrepancy is detected the dataset will be downloaded and necessary
+file/folder structure will be generated.
 
-  - ‘features\_info.txt’: Shows information about the variables used on
-    the feature vector.
+``` 
+    datalink <-"https://d396qusza40orc.cloudfront.net/getdata%2Fprojectfiles%2FUCI%20HAR%20Dataset.zip"
 
-  - ‘features.txt’: List of all features.
+if (!dir.exists(datafolder) & sum(file.exists(requiredFiles)) != 8) {
+    download.file(datalink,destfile = "dataset.zip")
+    unzip("dataset.zip")
+}
+```
 
-  - ‘activity\_labels.txt’: Links the class labels with their activity
-    name.
+For ease use and memory advantages the dataset components are generated
+as datatable ’s using fread() :
 
-  - ‘train/X\_train.txt’: Training set.
+``` 
+testSub <- fread(filetestSub);trainSub <- fread(filetrainSub)
+features <- fread(filefeatures, drop = 1);activities <- fread(fileactivities)
+testX <- fread(filetestX);testY <- fread(filetestY)
+trainX <- fread(filetrainX);trainY <- fread(filetrainY)    
+```
 
-  - ‘train/y\_train.txt’: Training labels.
+Once the tables are read, the files are deleted:
 
-  - ‘test/X\_test.txt’: Test set.
+    unlink("dataset.zip")
+    unlink(datafolder, recursive = T) 
 
-  - ‘test/y\_test.txt’: Test labels.
+##### 1 <a name="first"></a>
 
-The following files are available for the train and test data. Their
-descriptions are equivalent.
+To start tidying the set, all tables will be merged. Initially X,Y and
+Subject data tables were column binded for each of the *test* and
+*train* groups separately creating sets labelled by subject and activity
+numerators, which later are going to be used in grouping the final set :
 
-  - ‘train/subject\_train.txt’: Each row identifies the subject who
-    performed the activity for each window sample. Its range is from 1
-    to 30.
+    fullTest <- bind_cols(testSub,testY,testX)
+    fullTrain <- bind_cols(trainSub,trainY,trainX)
 
-  - ‘train/Inertial Signals/total\_acc\_x\_train.txt’: The acceleration
-    signal from the smartphone accelerometer X axis in standard gravity
-    units ‘g’. Every row shows a 128 element vector. The same
-    description applies for the ‘total\_acc\_x\_train.txt’ and
-    ‘total\_acc\_z\_train.txt’ files for the Y and Z axis.
+Now it is possible to merge all rows as a single data table:
 
-  - ‘train/Inertial Signals/body\_acc\_x\_train.txt’: The body
-    acceleration signal obtained by subtracting the gravity from the
-    total acceleration.
+    observations <- bind_rows(fullTest,fullTrain)
 
-  - ‘train/Inertial Signals/body\_gyro\_x\_train.txt’: The angular
-    velocity vector measured by the gyroscope for each window sample.
-    The units are radians/second.
+Next step is to append the variable names to the flattened observations
+table:
 
-# Notes:
+    columnNames <- c("subjectId","activityId",unlist(features,use.names = F))
+    colnames(observations) <- columnNames
 
-  - Inertial signals are not included in the tidy set.
-  - Features are normalized and bounded within \[-1,1\].
-  - Each feature vector is a row on the text file.
+##### 2 <a name="second"></a>
 
-For more information about this dataset contact:
-<activityrecognition@smartlab.ws>
+The requested final dataset should solely include mean and standard
+deviation calculations of the observations. The dataset will be
+converted to a tibble for enabling required operations:
 
-# License:
+    observations <- as_tibble(select(observations, 
+                                  contains("subjectId") |
+                                      contains("activityId") | 
+                                      contains("mean()") | 
+                                      contains("std()")))
 
-Use of this dataset in publications must be acknowledged by referencing
-the following publication \[1\]
+##### 3 <a name="third"></a>
 
-\[1\] Davide Anguita, Alessandro Ghio, Luca Oneto, Xavier Parra and
-Jorge L. Reyes-Ortiz. Human Activity Recognition on Smartphones using a
-Multiclass Hardware-Friendly Support Vector Machine. International
-Workshop of Ambient Assisted Living (IWAAL 2012). Vitoria-Gasteiz,
-Spain. Dec 2012
+Adding user friendly ‘Activity’ names:
 
-This dataset is distributed AS-IS and no responsibility implied or
-explicit can be addressed to the authors or their institutions for its
-use or misuse. Any commercial use is prohibited.
+    observations <- mutate(observations, 
+        Activity = activities$V2[unlist(observations['activityId'])], 
+        .after = 'subjectId')
+    observations <- select(observations,-"activityId")
 
-Jorge L. Reyes-Ortiz, Alessandro Ghio, Luca Oneto, Davide Anguita.
-November 2012.
+##### 4 <a name="fourth"></a>
+
+Tidying column names by removing less human readable characters and
+supplying camelCase coded variable names:
+
+    observations <- observations %>% 
+        rename_with(~sub("-","",.x))%>%
+        rename_with(~sub("mean","Mean",.x))%>%
+        rename_with(~sub("std","Sdev",.x))%>%
+        rename_with(~sub("-","",.x))%>%
+        rename_with(~sub("\\()","",.x))
+
+##### 5 <a name="fifth"></a>
+
+Group, summarise and write the final tidy data:
+
+    tidy_data <<- observations %>% group_by(activity,subjectId)%>% 
+        summarise(across(everything(),mean))%>%
+        write.csv("tidy_data.csv")

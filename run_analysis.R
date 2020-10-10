@@ -8,7 +8,7 @@ analyse <- function(){
     require(data.table)
     require(dplyr)
     
-    # Define required files.
+    # Define required files and folders.
     datafolder <- "UCI HAR Dataset"
     filetestX <- file.path(datafolder,"test","X_test.txt") 
     filetestY <- file.path(datafolder,"test","y_test.txt")
@@ -52,21 +52,21 @@ analyse <- function(){
     observations <- bind_rows(fullTest,fullTrain)
     
     # Add column names
-    columnNames <- c("SubjectId","ActivityId",unlist(features,use.names = F))
+    columnNames <- c("subjectId","activityId",unlist(features,use.names = F))
     colnames(observations) <- columnNames
     
     # Select only requested columns and convert set to tibble
     observations <- as_tibble(select(observations, 
-                                  contains("SubjectId") |
-                                      contains("ActivityId") | 
+                                  contains("subjectId") |
+                                      contains("activityId") | 
                                       contains("mean()") | 
                                       contains("std()")))
     
     # Add user friendly 'Activity' names
     observations <- mutate(observations, 
-        Activity = activities$V2[unlist(observations['ActivityId'])], 
-        .after = 'SubjectId')
-    observations <- select(observations,-"ActivityId")
+        activity = activities$V2[unlist(observations['activityId'])], 
+        .after = 'subjectId')
+    observations <- select(observations,-"activityId")
     
     # Tidy column names
     observations <- observations %>% 
@@ -76,10 +76,10 @@ analyse <- function(){
         rename_with(~sub("-","",.x))%>%
         rename_with(~sub("\\()","",.x))
     
-    # Group and create the tidy data
-    tidy_data <<- observations %>% group_by(Activity,SubjectId)%>% 
+    # Group and create the final tidy data
+    observations %>% group_by(activity,subjectId)%>% 
         summarise(across(everything(),mean))%>%
-        print
+        write.csv("tidy_data.csv",row.names = F)
     
     
 }
